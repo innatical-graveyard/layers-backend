@@ -1,0 +1,20 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id String @id @default(uuid())
+  username String @unique
+  email String @unique
+  hashedToken String
+  protectedKeychain Json
+  avatar String @default("https://cdn.nekos.life/avatar/avatar_13.png")
+}
