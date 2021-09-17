@@ -11,8 +11,12 @@ const users = trpc
   .router<Context>()
   .mutation("register", {
     input: z.object({
-      username: z.string(),
-      email: z.string(),
+      username: z
+        .string()
+        .regex(/^[a-zA-Z0-9_]*$/)
+        .min(3)
+        .max(32),
+      email: z.string().email(),
       token: z.string(),
       keychain: keychainType,
     }),
@@ -58,7 +62,7 @@ const users = trpc
   })
   .mutation("login", {
     input: z.object({
-      email: z.string(),
+      email: z.string().email(),
       token: z.string(),
     }),
     async resolve({ input }) {
@@ -88,7 +92,7 @@ const users = trpc
   })
   .query("salt", {
     input: z.object({
-      email: z.string(),
+      email: z.string().email(),
     }),
     async resolve({ input }) {
       const user = await db.user.findUnique({
@@ -113,10 +117,14 @@ const users = trpc
   .query("user", {
     input: z.union([
       z.object({
-        id: z.string(),
+        id: z.string().uuid(),
       }),
       z.object({
-        username: z.string(),
+        username: z
+          .string()
+          .regex(/^[a-zA-Z0-9_]*$/)
+          .min(3)
+          .max(32),
       }),
     ]),
     async resolve({ input, ctx }) {
