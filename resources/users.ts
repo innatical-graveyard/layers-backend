@@ -85,6 +85,68 @@ const users = trpc
         token: jwt.sign({}, JWT_KEY, { expiresIn: "7w", subject: user.id }),
       };
     },
+  })
+  .query("salt", {
+    input: z.object({
+      email: z.string(),
+    }),
+    async resolve({ input }) {
+      const user = await db.user.findUnique({
+        where: {
+          email: input.email,
+        },
+      });
+
+      if (!user)
+        return {
+          ok: false,
+          error: "User not found",
+        };
+
+      return {
+        ok: true,
+        salt: (user.protectedKeychain as z.infer<typeof keychainType>)
+          .tokenSalt,
+      };
+    },
+  })
+  .query("user", {
+    input: z.union([
+      z.object({
+        id: z.string(),
+      }),
+      z.object({
+        username: z.string(),
+      }),
+    ]),
+    async resolve({ input, ctx }) {
+      if (!ctx.user)
+        return {
+          ok: false,
+          error: "Authorization required",
+        };
+
+      const user = await db.user.findUnique({
+        where: {
+          ...("id" in input ? { id: input.id } : { username: input.username }),
+        },
+      });
+
+      if (!user)
+        return {
+          ok: false,
+          error: "User not found",
+        };
+
+      return {
+        ok: true,
+        user: {
+          id: user.id,
+          username: user.username,
+          keychain: user.protectedKeychain,
+        },
+      };
+    },
   });
 
 export default users;
