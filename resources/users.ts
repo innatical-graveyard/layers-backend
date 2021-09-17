@@ -2,7 +2,7 @@ import * as trpc from "@trpc/server";
 import { z } from "zod";
 import type { Context } from "./_app";
 import db from "../util/db";
-import { keychainType } from "../util/types";
+import { keychainType, Result } from "../util/types";
 import jwt from "jsonwebtoken";
 import { JWT_KEY } from "../util/constants";
 import argon2 from "argon2";
@@ -20,7 +20,7 @@ const users = trpc
       token: z.string(),
       keychain: keychainType,
     }),
-    async resolve({ input }) {
+    async resolve({ input }): Promise<Result<{ token: string }>> {
       const matchingUsername = await db.user.findUnique({
         where: {
           username: input.username,
@@ -65,7 +65,7 @@ const users = trpc
       email: z.string().email(),
       token: z.string(),
     }),
-    async resolve({ input }) {
+    async resolve({ input }): Promise<Result<{ token: string }>> {
       const user = await db.user.findUnique({
         where: {
           email: input.email,
@@ -94,7 +94,7 @@ const users = trpc
     input: z.object({
       email: z.string().email(),
     }),
-    async resolve({ input }) {
+    async resolve({ input }): Promise<Result<{ salt: number[] }>> {
       const user = await db.user.findUnique({
         where: {
           email: input.email,
@@ -127,7 +127,15 @@ const users = trpc
           .max(32),
       }),
     ]),
-    async resolve({ input, ctx }) {
+    async resolve({ input, ctx }): Promise<
+      Result<{
+        user: {
+          id: string;
+          username: string;
+          keychain: z.infer<typeof keychainType>;
+        };
+      }>
+    > {
       if (!ctx.user)
         return {
           ok: false,
@@ -151,7 +159,7 @@ const users = trpc
         user: {
           id: user.id,
           username: user.username,
-          keychain: user.protectedKeychain,
+          keychain: user.protectedKeychain as z.infer<typeof keychainType>,
         },
       };
     },

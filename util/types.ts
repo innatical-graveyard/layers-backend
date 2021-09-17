@@ -12,3 +12,5 @@ export const keychainType = z.object({
   signing: keypairType,
   tokenSalt: z.array(z.number()),
 });
+
+export type Result<T> = { ok: false; error: string } | ({ ok: true } & T);
