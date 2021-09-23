@@ -1,16 +1,27 @@
 import { z } from "zod";
 
-const keypairType = z.object({
-  privateKey: z.array(z.number()),
-  publicKey: z.array(z.number()),
-  salt: z.array(z.number()),
-  iv: z.array(z.number()),
+export const jsonWebKey = z.object({
+  kty: z.string(),
+  crv: z.string(),
+  key_ops: z.array(z.string()),
+  ext: z.boolean(),
+  x: z.string(),
+  y: z.string(),
 });
 
-export const keychainType = z.object({
-  encryption: keypairType,
-  signing: keypairType,
-  tokenSalt: z.array(z.number()),
+export const publicKeychain = z.object({
+  encryption: jsonWebKey,
+  signing: jsonWebKey,
+});
+
+export const encryptedMessage = z.object({
+  data: z.array(z.number().int()),
+  iv: z.array(z.number().int()),
+});
+
+export const signedMessage = z.object({
+  data: z.string(),
+  signature: z.array(z.number().int()),
 });
 
 export type Result<T> = { ok: false; error: string } | ({ ok: true } & T);

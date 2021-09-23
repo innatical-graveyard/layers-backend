@@ -11,10 +11,12 @@ generator client {
 }
 
 model User {
-  id String @id @default(uuid())
-  username String @unique
-  email String @unique
-  hashedToken String
-  protectedKeychain Json
-  avatar String @default("https://cdn.nekos.life/avatar/avatar_13.png")
+  id                String @id @default(uuid())
+  username          String @unique
+  email             String @unique
+  encryptedKeychain Json
+  publicKeychain    Json
+  avatar            String @default("https://cdn.nekos.life/avatar/avatar_19.png")
+  friends           User[] @relation("UsersToUsers")
+  friended          User[] @relation("UsersToUsers")
 }

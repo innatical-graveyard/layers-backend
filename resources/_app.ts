@@ -16,7 +16,10 @@ export const handler = trpc.createHttpHandler({
     if (http.req.headers.authorization) {
       const token = jwt.verify(http.req.headers.authorization, JWT_KEY) as {
         sub: string;
+        type: string;
       };
+
+      if (token.type !== "user") throw new Error("Not a user token");
 
       const user = await db.user.findUnique({ where: { id: token.sub } });
       if (!user) throw new Error("The user doesn't exist?!?!?!");
