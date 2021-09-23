@@ -250,9 +250,62 @@ const users = trpc
       };
     },
   })
-  .query("getDmChannel", {
-    input: z.object({}),
-    async resolve() {},
+  .mutation("update", {
+    input: z
+      .object({
+        username: z
+          .string()
+          .regex(/^[a-zA-Z0-9_]*$/)
+          .min(3)
+          .max(32),
+        email: z.string().email(),
+        salt: z.array(z.number().int()),
+        encryptedKeychain: encryptedMessage,
+        publicKeychain: publicKeychain,
+      })
+      .partial(),
+    async resolve({ input, ctx }): Promise<Result<{}>> {
+      if (!ctx.user)
+        return {
+          ok: false,
+          error: "AuthorizationRequired",
+        };
+
+      const matchingUsername = await db.user.findUnique({
+        where: {
+          username: input.username,
+        },
+      });
+
+      if (matchingUsername)
+        return {
+          ok: false,
+          error: "UsernameTaken",
+        };
+
+      const matchingEmail = await db.user.findUnique({
+        where: {
+          email: input.email,
+        },
+      });
+
+      if (matchingEmail)
+        return {
+          ok: false,
+          error: "EmailInUse",
+        };
+
+      await db.user.update({
+        where: {
+          id: ctx.user.id,
+        },
+        data: input,
+      });
+
+      return {
+        ok: true,
+      };
+    },
   });
 
 export default users;
