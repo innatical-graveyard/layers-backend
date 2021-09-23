@@ -23,7 +23,7 @@ const users = trpc
         .min(3)
         .max(32),
       email: z.string().email(),
-      token: z.string(),
+      salt: z.array(z.number().int()),
       encryptedKeychain: encryptedMessage,
       publicKeychain: publicKeychain,
     }),
@@ -58,6 +58,7 @@ const users = trpc
           email: input.email,
           encryptedKeychain: input.encryptedKeychain,
           publicKeychain: input.publicKeychain,
+          salt: input.salt,
         },
       });
 
@@ -117,7 +118,10 @@ const users = trpc
 
       return {
         ok: true,
-        token: jwt.sign({}, JWT_KEY, { expiresIn: "7w", subject: user.id }),
+        token: jwt.sign({ type: "user" }, JWT_KEY, {
+          expiresIn: "7w",
+          subject: user.id,
+        }),
       };
     },
   })
@@ -129,6 +133,7 @@ const users = trpc
       Result<{
         challenge: string;
         encryptedKeychain: z.infer<typeof encryptedMessage>;
+        salt: number[];
       }>
     > {
       const user = await db.user.findUnique({
@@ -153,6 +158,7 @@ const users = trpc
         encryptedKeychain: user.encryptedKeychain as z.infer<
           typeof encryptedMessage
         >,
+        salt: user.salt,
       };
     },
   })

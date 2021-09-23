@@ -16,6 +16,7 @@ model User {
   email             String @unique
   encryptedKeychain Json
   publicKeychain    Json
+  salt              Int[]
   avatar            String @default("https://cdn.nekos.life/avatar/avatar_19.png")
   friends           User[] @relation("UsersToUsers")
   friended          User[] @relation("UsersToUsers")

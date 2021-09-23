@@ -1,12 +1,12 @@
 import { z } from "zod";
 
 export const jsonWebKey = z.object({
-  kty: z.string(),
-  crv: z.string(),
-  key_ops: z.array(z.string()),
-  ext: z.boolean(),
-  x: z.string(),
-  y: z.string(),
+  kty: z.string().optional(),
+  crv: z.string().optional(),
+  key_ops: z.array(z.string()).optional(),
+  ext: z.boolean().optional(),
+  x: z.string().optional(),
+  y: z.string().optional(),
 });
 
 export const publicKeychain = z.object({
