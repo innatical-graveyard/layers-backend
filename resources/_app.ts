@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { User } from "@prisma/client";
 import * as trpc from "@trpc/server";
 import { JWT_KEY } from "../util/constants";
