@@ -1,8 +1,8 @@
-import { EncryptedMessage } from "@innatical/inncryption";
+import { EncryptedMessage, SignedMessage } from "@innatical/inncryption";
 import * as trpc from "@trpc/server";
 import { z } from "zod";
 import db from "../util/db";
-import { encryptedMessage, Result } from "../util/types";
+import { Result, signedMessage } from "../util/types";
 import type { Context } from "./_app";
 
 const channels = trpc
@@ -57,7 +57,7 @@ const channels = trpc
           id: string;
           createdAt: string;
           updatedAt: string | undefined;
-          payload: EncryptedMessage;
+          payload: SignedMessage;
           author: string;
         }[];
       }>
@@ -106,7 +106,7 @@ const channels = trpc
             id: message.id,
             createdAt: message.createdAt.toISOString(),
             updatedAt: message.updatedAt?.toISOString(),
-            payload: message.payload as unknown as EncryptedMessage,
+            payload: message.payload as unknown as SignedMessage,
             author: message.authorId,
           })),
         };
@@ -127,7 +127,7 @@ const channels = trpc
             id: message.id,
             createdAt: message.createdAt.toISOString(),
             updatedAt: message.updatedAt?.toISOString(),
-            payload: message.payload as unknown as EncryptedMessage,
+            payload: message.payload as unknown as SignedMessage,
             author: message.authorId,
           })),
         };
@@ -137,7 +137,7 @@ const channels = trpc
   .mutation("send", {
     input: z.object({
       id: z.string(),
-      payload: encryptedMessage,
+      payload: signedMessage,
     }),
     async resolve({ ctx, input }): Promise<Result<{}>> {
       if (!ctx.user)
