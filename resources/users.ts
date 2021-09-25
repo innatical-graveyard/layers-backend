@@ -271,29 +271,33 @@ const users = trpc
           error: "AuthorizationRequired",
         };
 
-      const matchingUsername = await db.user.findUnique({
-        where: {
-          username: input.username,
-        },
-      });
+      if (input.username) {
+        const matchingUsername = await db.user.findUnique({
+          where: {
+            username: input.username,
+          },
+        });
 
-      if (matchingUsername)
-        return {
-          ok: false,
-          error: "UsernameTaken",
-        };
+        if (matchingUsername)
+          return {
+            ok: false,
+            error: "UsernameTaken",
+          };
+      }
 
-      const matchingEmail = await db.user.findUnique({
-        where: {
-          email: input.email,
-        },
-      });
+      if (input.email) {
+        const matchingEmail = await db.user.findUnique({
+          where: {
+            email: input.email,
+          },
+        });
 
-      if (matchingEmail)
-        return {
-          ok: false,
-          error: "EmailInUse",
-        };
+        if (matchingEmail)
+          return {
+            ok: false,
+            error: "EmailInUse",
+          };
+      }
 
       await db.user.update({
         where: {
