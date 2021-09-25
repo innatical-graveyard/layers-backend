@@ -11,13 +11,47 @@ generator client {
 }
 
 model User {
-  id                String @id @default(uuid())
-  username          String @unique
-  email             String @unique
+  id                String    @id @default(uuid())
+  username          String    @unique
+  email             String    @unique
   encryptedKeychain Json
   publicKeychain    Json
   salt              Int[]
-  avatar            String @default("https://cdn.nekos.life/avatar/avatar_19.png")
-  friends           User[] @relation("UsersToUsers")
-  friended          User[] @relation("UsersToUsers")
+  avatar            String    @default("https://cdn.nekos.life/avatar/avatar_19.png")
+  friends           User[]    @relation("UsersToUsers")
+  friended          User[]    @relation("UsersToUsers")
+  channelFrom       Channel[] @relation("from")
+  channelTo         Channel[] @relation("to")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime? @default(now()) @updatedAt
+  messages          Message[]
+}
+
+enum ChannelType {
+  DM
+}
+
+model Channel {
+  id     String      @id @default(uuid())
+  type   ChannelType
+  from   User?       @relation("from", fields: [fromId], references: [id])
+  fromId String?
+
+  to   User?   @relation("to", fields: [toId], references: [id])
+  toId String?
+
+  messages Message[]
+  @@unique([fromId, toId])
+  @@unique([toId, fromId])
+}
+
+model Message {
+  id        String    @id @default(uuid())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+  payload   Json
+  channel   Channel   @relation(fields: [channelId], references: [id])
+  channelId String
+  author    User      @relation(fields: [authorId], references: [id])
+  authorId  String
 }

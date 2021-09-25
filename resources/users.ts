@@ -310,6 +310,241 @@ const users = trpc
         ok: true,
       };
     },
+  })
+  .query("getDMChannels", {
+    async resolve({
+      ctx,
+    }): Promise<Result<{ channels: { id: string; to: string }[] }>> {
+      if (!ctx.user)
+        return {
+          ok: false,
+          error: "AuthorizationRequired",
+        };
+
+      const channels = await db.channel.findMany({
+        where: {
+          type: "DM",
+          OR: [
+            {
+              from: {
+                id: ctx.user.id,
+              },
+            },
+            {
+              to: {
+                id: ctx.user.id,
+              },
+            },
+          ],
+        },
+      });
+
+      return {
+        ok: true,
+        channels: channels.map((channel) => ({
+          id: channel.id,
+          to: channel.fromId === ctx.user?.id ? channel.toId! : channel.fromId!,
+        })),
+      };
+    },
+  })
+  .query("friends", {
+    async resolve({
+      ctx,
+    }): Promise<
+      Result<{ incoming: string[]; outgoing: string[]; friends: string[] }>
+    > {
+      if (!ctx.user)
+        return {
+          ok: false,
+          error: "AuthorizationRequired",
+        };
+
+      const user = await db.user.findUnique({
+        where: {
+          id: ctx.user.id,
+        },
+        include: {
+          friends: true,
+          friended: true,
+        },
+      });
+
+      if (!user)
+        return {
+          ok: false,
+          error: "ThisShouldNeverHappen",
+        };
+
+      const outgoing = user.friends.map((friend) => friend.id);
+      const incoming = user.friended.map((friend) => friend.id);
+
+      return {
+        ok: true,
+        friends: outgoing.filter((friend) => incoming.includes(friend)),
+        outgoing: outgoing.filter((friend) => !incoming.includes(friend)),
+        incoming: incoming.filter((friend) => !outgoing.includes(friend)),
+      };
+    },
+  })
+  .mutation("addFriend", {
+    input: z.object({
+      id: z.string(),
+    }),
+    async resolve({ ctx, input }): Promise<Result<{}>> {
+      if (!ctx.user)
+        return {
+          ok: false,
+          error: "AuthorizationRequired",
+        };
+
+      const friend = db.user.findUnique({
+        where: {
+          id: input.id,
+        },
+      });
+
+      if (!friend)
+        return {
+          ok: false,
+          error: "UserNotFound",
+        };
+
+      await db.user.update({
+        where: {
+          id: ctx.user.id,
+        },
+        data: {
+          friends: {
+            connect: {
+              id: input.id,
+            },
+          },
+        },
+      });
+
+      return {
+        ok: true,
+      };
+    },
+  })
+  .mutation("removeFriend", {
+    input: z.object({
+      id: z.string(),
+    }),
+    async resolve({ ctx, input }): Promise<Result<{}>> {
+      if (!ctx.user)
+        return {
+          ok: false,
+          error: "AuthorizationRequired",
+        };
+
+      const friend = db.user.findUnique({
+        where: {
+          id: input.id,
+        },
+      });
+
+      if (!friend)
+        return {
+          ok: false,
+          error: "UserNotFound",
+        };
+
+      await db.user.update({
+        where: {
+          id: ctx.user.id,
+        },
+        data: {
+          friends: {
+            disconnect: {
+              id: input.id,
+            },
+          },
+          friended: {
+            disconnect: {
+              id: input.id,
+            },
+          },
+        },
+      });
+
+      return {
+        ok: true,
+      };
+    },
+  })
+  .mutation("getDMChannel", {
+    input: z.object({
+      id: z.string(),
+    }),
+    async resolve({ ctx, input }): Promise<Result<{ id: string }>> {
+      if (!ctx.user)
+        return {
+          ok: false,
+          error: "AuthorizationRequired",
+        };
+
+      const recipient = await db.user.findUnique({
+        where: {
+          id: input.id,
+        },
+        include: {
+          friends: true,
+          friended: true,
+        },
+      });
+
+      if (!recipient)
+        return {
+          ok: false,
+          error: "UserNotFound",
+        };
+
+      const outgoing = recipient.friends.map((friend) => friend.id);
+      const incoming = recipient.friended.map((friend) => friend.id);
+
+      if (!(outgoing.includes(ctx.user.id) && incoming.includes(ctx.user.id)))
+        return {
+          ok: false,
+          error: "NotFriends",
+        };
+
+      const channel = await db.channel.findFirst({
+        where: {
+          OR: [
+            {
+              fromId: ctx.user.id,
+              toId: recipient.id,
+            },
+            {
+              fromId: recipient.id,
+              toId: ctx.user.id,
+            },
+          ],
+        },
+      });
+
+      if (!channel) {
+        const channel = await db.channel.create({
+          data: {
+            type: "DM",
+            fromId: ctx.user.id,
+            toId: recipient.id,
+          },
+        });
+
+        return {
+          ok: true,
+          id: channel.id,
+        };
+      } else {
+        return {
+          ok: true,
+          id: channel.id,
+        };
+      }
+    },
   });
 
 export default users;
