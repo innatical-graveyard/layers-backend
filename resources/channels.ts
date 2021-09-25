@@ -2,7 +2,7 @@ import { EncryptedMessage } from "@innatical/inncryption";
 import * as trpc from "@trpc/server";
 import { z } from "zod";
 import db from "../util/db";
-import { Result, signedMessage } from "../util/types";
+import { encryptedMessage, Result, signedMessage } from "../util/types";
 import type { Context } from "./_app";
 
 const channels = trpc
@@ -137,7 +137,7 @@ const channels = trpc
   .mutation("send", {
     input: z.object({
       id: z.string(),
-      payload: signedMessage,
+      payload: encryptedMessage,
     }),
     async resolve({ ctx, input }): Promise<Result<{}>> {
       if (!ctx.user)
