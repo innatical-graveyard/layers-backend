@@ -1,4 +1,4 @@
-import { EncryptedMessage, SignedMessage } from "@innatical/inncryption";
+import { EncryptedMessage } from "@innatical/inncryption";
 import * as trpc from "@trpc/server";
 import { z } from "zod";
 import db from "../util/db";
@@ -57,7 +57,7 @@ const channels = trpc
           id: string;
           createdAt: string;
           updatedAt: string | undefined;
-          payload: SignedMessage;
+          payload: EncryptedMessage;
           author: string;
         }[];
       }>
@@ -106,7 +106,7 @@ const channels = trpc
             id: message.id,
             createdAt: message.createdAt.toISOString(),
             updatedAt: message.updatedAt?.toISOString(),
-            payload: message.payload as unknown as SignedMessage,
+            payload: message.payload as unknown as EncryptedMessage,
             author: message.authorId,
           })),
         };
@@ -127,7 +127,7 @@ const channels = trpc
             id: message.id,
             createdAt: message.createdAt.toISOString(),
             updatedAt: message.updatedAt?.toISOString(),
-            payload: message.payload as unknown as SignedMessage,
+            payload: message.payload as unknown as EncryptedMessage,
             author: message.authorId,
           })),
         };
