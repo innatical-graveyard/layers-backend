@@ -2,8 +2,11 @@ import { EncryptedMessage } from "@innatical/inncryption";
 import * as trpc from "@trpc/server";
 import { z } from "zod";
 import db from "../util/db";
-import { encryptedMessage, Result, signedMessage } from "../util/types";
+import { encryptedMessage, Result } from "../util/types";
 import type { Context } from "./_app";
+import jwt from "jsonwebtoken";
+import { JWT_KEY } from "../util/constants";
+import { channels as channelsBus, MessageEvent } from "../util/bus";
 
 const channels = trpc
   .router<Context>()
@@ -31,7 +34,7 @@ const channels = trpc
           error: "ChannelNotFound",
         };
 
-      if (!(channel.fromId !== ctx.user.id || channel.toId !== ctx.user.id)) {
+      if (!(channel.fromId === ctx.user.id || channel.toId === ctx.user.id)) {
         return {
           ok: false,
           error: "NoPermission",
@@ -56,7 +59,7 @@ const channels = trpc
         messages: {
           id: string;
           createdAt: string;
-          updatedAt: string | undefined;
+          updatedAt?: string;
           payload: EncryptedMessage;
           author: string;
         }[];
@@ -78,7 +81,7 @@ const channels = trpc
           error: "ChannelNotFound",
         };
 
-      if (!(channel.fromId !== ctx.user.id || channel.toId !== ctx.user.id)) {
+      if (!(channel.fromId === ctx.user.id || channel.toId === ctx.user.id)) {
         return {
           ok: false,
           error: "NoPermission",
@@ -92,7 +95,7 @@ const channels = trpc
             channel,
           },
           orderBy: {
-            createdAt: "asc",
+            createdAt: "desc",
           },
           skip: 1,
           cursor: {
@@ -102,13 +105,15 @@ const channels = trpc
 
         return {
           ok: true,
-          messages: messages.map((message) => ({
-            id: message.id,
-            createdAt: message.createdAt.toISOString(),
-            updatedAt: message.updatedAt?.toISOString(),
-            payload: message.payload as unknown as EncryptedMessage,
-            author: message.authorId,
-          })),
+          messages: messages
+            .map((message) => ({
+              id: message.id,
+              createdAt: message.createdAt.toISOString(),
+              updatedAt: message.updatedAt?.toISOString(),
+              payload: message.payload as unknown as EncryptedMessage,
+              author: message.authorId,
+            }))
+            .reverse(),
         };
       } else {
         const messages = await db.message.findMany({
@@ -117,19 +122,21 @@ const channels = trpc
             channel,
           },
           orderBy: {
-            createdAt: "asc",
+            createdAt: "desc",
           },
         });
 
         return {
           ok: true,
-          messages: messages.map((message) => ({
-            id: message.id,
-            createdAt: message.createdAt.toISOString(),
-            updatedAt: message.updatedAt?.toISOString(),
-            payload: message.payload as unknown as EncryptedMessage,
-            author: message.authorId,
-          })),
+          messages: messages
+            .map((message) => ({
+              id: message.id,
+              createdAt: message.createdAt.toISOString(),
+              updatedAt: message.updatedAt?.toISOString(),
+              payload: message.payload as unknown as EncryptedMessage,
+              author: message.authorId,
+            }))
+            .reverse(),
         };
       }
     },
@@ -156,12 +163,20 @@ const channels = trpc
           error: "ChannelNotFound",
         };
 
-      if (!(channel.fromId !== ctx.user.id || channel.toId !== ctx.user.id)) {
+      if (!(channel.fromId === ctx.user.id || channel.toId === ctx.user.id)) {
         return {
           ok: false,
           error: "NoPermission",
         };
       }
+
+      const message = await db.message.create({
+        data: {
+          channelId: channel.id,
+          authorId: ctx.user.id,
+          payload: input.payload,
+        },
+      });
 
       await db.channel.update({
         where: {
@@ -169,17 +184,71 @@ const channels = trpc
         },
         data: {
           messages: {
-            create: {
-              authorId: ctx.user.id,
-              payload: input.payload,
+            connect: {
+              id: message.id,
             },
           },
         },
       });
 
+      channelsBus.emit(channel.id, {
+        type: "message",
+        id: message.id,
+        createdAt: message.createdAt.toISOString(),
+        updatedAt: message.updatedAt?.toISOString(),
+        payload: message.payload as unknown as EncryptedMessage,
+        author: message.authorId,
+      });
+
       return {
         ok: true,
       };
+    },
+  })
+  .subscription("channel", {
+    input: z.object({
+      id: z.string(),
+      token: z.string(),
+    }),
+    async resolve({ input }) {
+      const token = jwt.verify(input.token, JWT_KEY) as {
+        sub: string;
+        type: string;
+      };
+
+      if (token.type !== "user") throw new Error("Not a user token");
+
+      const user = await db.user.findUnique({ where: { id: token.sub } });
+      if (!user) throw new Error("The user doesn't exist?!?!?!");
+
+      const channel = await db.channel.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!channel)
+        throw {
+          ok: false,
+          error: "ChannelNotFound",
+        };
+
+      if (!(channel.fromId === user.id || channel.toId === user.id)) {
+        throw {
+          ok: false,
+          error: "NoPermission",
+        };
+      }
+
+      return new trpc.Subscription<MessageEvent>((emit) => {
+        const onChannelEvent = (e: MessageEvent) => {
+          emit.data(e);
+        };
+
+        channelsBus.on(channel.id, onChannelEvent);
+
+        return () => {
+          channelsBus.off(channel.id, onChannelEvent);
+        };
+      });
     },
   });
 

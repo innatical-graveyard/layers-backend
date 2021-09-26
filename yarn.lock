@@ -245,6 +245,18 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-16.9.6.tgz#040a64d7faf9e5d9e940357125f0963012e66f04"
   integrity sha512-YHUZhBOMTM3mjFkXVcK+WwAcYmyhe1wL4lfqNtzI0b3qAy7yuSetnM7QJazgE5PFmgVTNGiLOgRFfJMqW7XpSQ==
 
+"@types/node@^12.7.2":
+  version "12.20.27"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.20.27.tgz#4141fcad57c332a120591de883e26fe4bb14aaea"
+  integrity sha512-qZdePUDSLAZRXXV234bLBEUM0nAQjoxbcSwp1rqSMUe1rZ47mwU6OjciR/JvF1Oo8mc0ys6GE0ks0HGgqAZoGg==
+
+"@types/ws@^8.2.0":
+  version "8.2.0"
+  resolved "https://registry.yarnpkg.com/@types/ws/-/ws-8.2.0.tgz#75faefbe2328f3b833cb8dc640658328990d04f3"
+  integrity sha512-cyeefcUCgJlEk+hk2h3N+MqKKsPViQgF5boi9TTHSK+PoR9KWBb/C5ccPcDyAqgsbAYHTwulch725DV84+pSpg==
+  dependencies:
+    "@types/node" "*"
+
 "@unimodules/core@*":
   version "7.1.2"
   resolved "https://registry.yarnpkg.com/@unimodules/core/-/core-7.1.2.tgz#5181b99586476a5d87afd0958f26a04714c47fa1"
@@ -1210,6 +1222,13 @@ tr46@~0.0.3:
   resolved "https://registry.yarnpkg.com/tr46/-/tr46-0.0.3.tgz#8184fd347dac9cdc185992f3a6622e14b9d9ab6a"
   integrity sha1-gYT9NH2snNwYWZLzpmIuFLnZq2o=
 
+tsee@^1.3.2:
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/tsee/-/tsee-1.3.2.tgz#abf75a5b70bf413dbc002e0fc896490cc2e72877"
+  integrity sha512-+oKU7u1d5J+AEwbA4S7+aF3jdPS1RLcf5fzB6z6CMwJE1U2DCPD0AcaPmAisVEBQx6+ssUyThAEzSNZ59UmvXA==
+  dependencies:
+    "@types/node" "^12.7.2"
+
 tslib@^2.0.0, tslib@^2.1.0, tslib@^2.2.0, tslib@^2.3.0, tslib@^2.3.1:
   version "2.3.1"
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-2.3.1.tgz#e8a335add5ceae51aa261d32a490158ef042ef01"
@@ -1308,6 +1327,11 @@ wrappy@1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/wrappy/-/wrappy-1.0.2.tgz#b5243d8f3ec1aa35f1364605bc0d1036e30ab69f"
   integrity sha1-tSQ9jz7BqjXxNkYFvA0QNuMKtp8=
+
+ws@^8.2.2:
+  version "8.2.2"
+  resolved "https://registry.yarnpkg.com/ws/-/ws-8.2.2.tgz#ca684330c6dd6076a737250ed81ac1606cb0a63e"
+  integrity sha512-Q6B6H2oc8QY3llc3cB8kVmQ6pnJWVQbP7Q5algTcIxx7YEpc0oU4NBVHlztA7Ekzfhw2r0rPducMUiCGWKQRzw==
 
 yallist@^4.0.0:
   version "4.0.0"
