@@ -1,1 +1,1 @@
-export const JWT_KEY = "owo";
+export const JWT_KEY = process.env["JWT_KEY"]!;
