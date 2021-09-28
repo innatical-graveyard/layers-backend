@@ -34,5 +34,5 @@ export const channels = new EventEmitter<{
 }>();
 
 export const users = new EventEmitter<{
-  [key: string]: (data: userEvent) => void;
+  [key: string]: (data: UserEvent) => void;
 }>();
