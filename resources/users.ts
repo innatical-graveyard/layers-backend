@@ -13,6 +13,7 @@ import { JWT_KEY } from "../util/constants";
 import { randomUUID } from "crypto";
 import { SigningPair } from "@innatical/inncryption";
 import axios from "axios";
+import { UserEvent, users as usersBus } from "../util/bus";
 
 const users = trpc
   .router<Context>()
@@ -560,6 +561,34 @@ const users = trpc
           id: channel.id,
         };
       }
+    },
+  })
+  .subscription("me", {
+    input: z.object({
+      token: z.string(),
+    }),
+    async resolve({ input }) {
+      const token = jwt.verify(input.token, JWT_KEY) as {
+        sub: string;
+        type: string;
+      };
+
+      if (token.type !== "user") throw new Error("Not a user token");
+
+      const user = await db.user.findUnique({ where: { id: token.sub } });
+      if (!user) throw new Error("The user doesn't exist?!?!?!");
+
+      return new trpc.Subscription<UserEvent>((emit) => {
+        const onUserEvent = (e: UserEvent) => {
+          emit.data(e);
+        };
+
+        usersBus.on(user.id, onUserEvent);
+
+        return () => {
+          usersBus.off(user.id, onUserEvent);
+        };
+      });
     },
   });
 

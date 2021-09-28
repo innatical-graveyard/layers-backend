@@ -10,6 +10,29 @@ export interface MessageEvent {
   author: string;
 }
 
+export interface SignalEvent {
+  type: "signal";
+  from: string;
+  data: EncryptedMessage;
+}
+
+export interface AnswerEvent {
+  type: "answer";
+  from: string;
+}
+
+export interface RingEvent {
+  type: "ring";
+  channel: string;
+}
+
+export type ChannelEvent = MessageEvent | SignalEvent | AnswerEvent;
+export type UserEvent = RingEvent;
+
 export const channels = new EventEmitter<{
-  [key: string]: (data: MessageEvent) => void;
+  [key: string]: (data: ChannelEvent) => void;
+}>();
+
+export const users = new EventEmitter<{
+  [key: string]: (data: userEvent) => void;
 }>();

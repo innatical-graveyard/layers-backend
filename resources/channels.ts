@@ -6,7 +6,7 @@ import { encryptedMessage, Result } from "../util/types";
 import type { Context } from "./_app";
 import jwt from "jsonwebtoken";
 import { JWT_KEY } from "../util/constants";
-import { channels as channelsBus, MessageEvent } from "../util/bus";
+import { ChannelEvent, channels as channelsBus, users } from "../util/bus";
 
 const channels = trpc
   .router<Context>()
@@ -238,8 +238,8 @@ const channels = trpc
         };
       }
 
-      return new trpc.Subscription<MessageEvent>((emit) => {
-        const onChannelEvent = (e: MessageEvent) => {
+      return new trpc.Subscription<ChannelEvent>((emit) => {
+        const onChannelEvent = (e: ChannelEvent) => {
           emit.data(e);
         };
 
@@ -249,6 +249,125 @@ const channels = trpc
           channelsBus.off(channel.id, onChannelEvent);
         };
       });
+    },
+  })
+  .mutation("signal", {
+    input: z.object({
+      id: z.string(),
+      data: encryptedMessage,
+    }),
+    async resolve({ input, ctx }): Promise<Result<{}>> {
+      if (!ctx.user)
+        return {
+          ok: false,
+          error: "AuthorizationRequired",
+        };
+
+      const channel = await db.channel.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!channel)
+        return {
+          ok: false,
+          error: "ChannelNotFound",
+        };
+
+      if (!(channel.fromId === ctx.user.id || channel.toId === ctx.user.id)) {
+        return {
+          ok: false,
+          error: "NoPermission",
+        };
+      }
+
+      channelsBus.emit(channel.id, {
+        type: "signal",
+        from: ctx.user.id,
+        data: input.data,
+      });
+
+      return {
+        ok: true,
+      };
+    },
+  })
+  .mutation("ring", {
+    input: z.object({
+      id: z.string(),
+    }),
+    async resolve({ input, ctx }): Promise<Result<{}>> {
+      if (!ctx.user)
+        return {
+          ok: false,
+          error: "AuthorizationRequired",
+        };
+
+      const channel = await db.channel.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!channel)
+        return {
+          ok: false,
+          error: "ChannelNotFound",
+        };
+
+      if (!(channel.fromId === ctx.user.id || channel.toId === ctx.user.id)) {
+        return {
+          ok: false,
+          error: "NoPermission",
+        };
+      }
+
+      users.emit(
+        channel.fromId === ctx.user.id ? channel.toId! : channel.fromId!,
+        {
+          type: "ring",
+          channel: channel.id,
+        }
+      );
+
+      return {
+        ok: true,
+      };
+    },
+  })
+  .mutation("answer", {
+    input: z.object({
+      id: z.string(),
+    }),
+    async resolve({ input, ctx }): Promise<Result<{}>> {
+      if (!ctx.user)
+        return {
+          ok: false,
+          error: "AuthorizationRequired",
+        };
+
+      const channel = await db.channel.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!channel)
+        return {
+          ok: false,
+          error: "ChannelNotFound",
+        };
+
+      if (!(channel.fromId === ctx.user.id || channel.toId === ctx.user.id)) {
+        return {
+          ok: false,
+          error: "NoPermission",
+        };
+      }
+
+      channelsBus.emit(channel.id, {
+        type: "answer",
+        from: ctx.user.id,
+      });
+
+      return {
+        ok: true,
+      };
     },
   });
 
