@@ -12,6 +12,7 @@ import jwt from "jsonwebtoken";
 import { JWT_KEY } from "../util/constants";
 import { randomUUID } from "crypto";
 import { SigningPair } from "@innatical/inncryption";
+import fetch from "node-fetch";
 
 const users = trpc
   .router<Context>()
@@ -260,6 +261,10 @@ const users = trpc
           .max(32),
         email: z.string().email(),
         salt: z.array(z.number().int()),
+        avatar: z
+          .string()
+          .url()
+          .regex(/^https:\/\/layers\.fra1\.cdn\.digitaloceanspaces\.com\//),
         encryptedKeychain: encryptedMessage,
         publicKeychain: publicKeychain,
       })
@@ -296,6 +301,18 @@ const users = trpc
           return {
             ok: false,
             error: "EmailInUse",
+          };
+      }
+
+      if (input.avatar) {
+        const res = await fetch(input.avatar, {
+          method: "HEAD",
+        });
+
+        if (res.status !== 200)
+          return {
+            ok: false,
+            error: "InvalidAvatar",
           };
       }
 
