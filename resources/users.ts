@@ -12,7 +12,7 @@ import jwt from "jsonwebtoken";
 import { JWT_KEY } from "../util/constants";
 import { randomUUID } from "crypto";
 import { SigningPair } from "@innatical/inncryption";
-import fetch from "node-fetch";
+import axios from "axios";
 
 const users = trpc
   .router<Context>()
@@ -305,15 +305,14 @@ const users = trpc
       }
 
       if (input.avatar) {
-        const res = await fetch(input.avatar, {
-          method: "HEAD",
-        });
-
-        if (res.status !== 200)
+        try {
+          await axios.head(input.avatar);
+        } catch {
           return {
             ok: false,
             error: "InvalidAvatar",
           };
+        }
       }
 
       await db.user.update({
