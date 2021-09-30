@@ -11,7 +11,7 @@ import {
 import jwt from "jsonwebtoken";
 import { JWT_KEY } from "../util/constants";
 import { randomUUID } from "crypto";
-import { SigningPair } from "@innatical/inncryption";
+import { EncryptedMessage, SigningPair } from "@innatical/inncryption";
 import axios from "axios";
 import { UserEvent, users as usersBus } from "../util/bus";
 
@@ -369,7 +369,13 @@ const users = trpc
         channels: channels.map((channel) => ({
           id: channel.id,
           to: channel.fromId === ctx.user?.id ? channel.toId! : channel.fromId!,
-          lastMessage: channel.messages[0].id,
+          lastMessage: {
+            id: channel.messages[0].id,
+            createdAt: channel.messages[0].createdAt.toISOString(),
+            updatedAt: channel.messages[0].updatedAt?.toISOString(),
+            payload: channel.messages[0].payload as unknown as EncryptedMessage,
+            author: channel.messages[0].authorId,
+          },
         })),
       };
     },
