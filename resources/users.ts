@@ -354,6 +354,14 @@ const users = trpc
             },
           ],
         },
+        include: {
+          messages: {
+            orderBy: {
+              createdAt: "desc",
+            },
+            take: 1,
+          },
+        },
       });
 
       return {
@@ -361,6 +369,7 @@ const users = trpc
         channels: channels.map((channel) => ({
           id: channel.id,
           to: channel.fromId === ctx.user?.id ? channel.toId! : channel.fromId!,
+          lastMessage: channel.messages[0].id,
         })),
       };
     },
