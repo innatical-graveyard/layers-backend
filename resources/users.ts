@@ -337,7 +337,7 @@ const users = trpc
           lastMessage?: {
             id: string;
             createdAt: string;
-            updatedAt: string;
+            updatedAt?: string;
             payload: EncryptedMessage;
             author: string;
           };
@@ -381,13 +381,18 @@ const users = trpc
         channels: channels.map((channel) => ({
           id: channel.id,
           to: channel.fromId === ctx.user?.id ? channel.toId! : channel.fromId!,
-          lastMessage: {
-            id: channel.messages[0].id,
-            createdAt: channel.messages[0].createdAt.toISOString(),
-            updatedAt: channel.messages[0].updatedAt?.toISOString(),
-            payload: channel.messages[0].payload as unknown as EncryptedMessage,
-            author: channel.messages[0].authorId,
-          },
+          ...(channel.messages[0]
+            ? {
+                lastMessage: {
+                  id: channel.messages[0].id,
+                  createdAt: channel.messages[0].createdAt.toISOString(),
+                  updatedAt: channel.messages[0].updatedAt?.toISOString(),
+                  payload: channel.messages[0]
+                    .payload as unknown as EncryptedMessage,
+                  author: channel.messages[0].authorId,
+                },
+              }
+            : {}),
         })),
       };
     },
