@@ -329,9 +329,21 @@ const users = trpc
     },
   })
   .query("getDMChannels", {
-    async resolve({
-      ctx,
-    }): Promise<Result<{ channels: { id: string; to: string }[] }>> {
+    async resolve({ ctx }): Promise<
+      Result<{
+        channels: {
+          id: string;
+          to: string;
+          lastMessage?: {
+            id: string;
+            createdAt: string;
+            updatedAt: string;
+            payload: EncryptedMessage;
+            author: string;
+          };
+        }[];
+      }>
+    > {
       if (!ctx.user)
         return {
           ok: false,
