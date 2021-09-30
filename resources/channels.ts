@@ -200,6 +200,16 @@ const channels = trpc
         author: message.authorId,
       });
 
+      users.emit(
+        channel.fromId !== ctx.user.id ? channel.fromId! : channel.toId!,
+        {
+          type: "notification",
+          channel: channel.id,
+          payload: message.payload as unknown as EncryptedMessage,
+          author: message.authorId,
+        }
+      );
+
       return {
         ok: true,
       };

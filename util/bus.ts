@@ -26,8 +26,15 @@ export interface RingEvent {
   channel: string;
 }
 
+export interface NotificationEvent {
+  type: "notification";
+  channel: string;
+  payload: EncryptedMessage;
+  author: string;
+}
+
 export type ChannelEvent = MessageEvent | SignalEvent | AnswerEvent;
-export type UserEvent = RingEvent;
+export type UserEvent = RingEvent | NotificationEvent;
 
 export const channels = new EventEmitter<{
   [key: string]: (data: ChannelEvent) => void;
